@@ -1,0 +1,137 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+data <- read.table("RTestData.txt", header = TRUE)
+```
+
+```{r}
+# Part A
+hist(data$lepto, main = "Histogram of Lepto", xlab = "Lepto")
+hist(data$strep, main = "Histogram of Strep", xlab = "Strep")
+hist(data$fuso, main = "Histogram of Fuso", xlab = "Fuso")
+hist(data$prev, main = "Histogram of Prev", xlab = "Prev")
+hist(data$deepest, main = "Histogram of Deepest", xlab = "Deepest")
+
+qqnorm(data$lepto); qqline(data$lepto)
+qqnorm(data$strep); qqline(data$strep)
+qqnorm(data$fuso); qqline(data$fuso)
+qqnorm(data$prev); qqline(data$prev)
+qqnorm(data$deepest); qqline(data$deepest)
+# data looks normal, most of the points are roughly along the line
+
+# One-way ANOVA and summary and boxplots
+anova_lepto <- aov(lepto ~ time, data = data)
+summary(anova_lepto)
+boxplot(lepto ~ time, data = data, main = "Lepto by Time", ylab = "Lepto")
+
+anova_strep <- aov(strep ~ time, data = data)
+summary(anova_strep)
+boxplot(strep ~ time, data = data, main = "Strep by Time", ylab = "Strep")
+
+# Correlation analysis (cor.test)
+# Strep vs. Prev
+cor.test(data$strep, data$prev)
+# Strep vs. Fuso
+cor.test(data$strep, data$fuso)
+# Fuso vs. Lepto
+cor.test(data$fuso, data$lepto)
+
+# Linear regressions
+# Strep vs. deepest
+model_strep <- lm(strep ~ deepest, data = data)
+plot(data$deepest, data$strep, main = "Strep vs Deepest", xlab = "Deepest", ylab = "Strep")
+abline(model_strep)
+
+# Fuso vs. deepest
+model_fuso <- lm(fuso ~ deepest, data = data)
+plot(data$deepest, data$fuso, main = "Fuso vs Deepest", xlab = "Deepest", ylab = "Fuso")
+abline(model_fuso)
+```
+```{r}
+# Part B
+library(ggplot2)
+
+# ggplot histogram of prev variable
+ggplot(data, aes(x = prev)) +
+  geom_histogram(binwidth = 0.1, fill = "blue", color = "black") +
+  labs(title = "Histogram of Prev", x = "Prev", y = "Frequency")
+
+# ggplot scatterplot of strep by deepest, colored by time
+ggplot(data, aes(x = deepest, y = strep, color = time)) +
+  geom_point() +
+  labs(title = "Strep vs Deepest by Time", x = "Deepest", y = "Strep")
+
+# ggplot scatterplot of fuso by deepest
+ggplot(data, aes(x = deepest, y = fuso)) +
+  geom_point() +
+  labs(title = "Fuso vs Deepest", x = "Deepest", y = "Fuso")
+
+# Same as above but with smoothing
+ggplot(data, aes(x = deepest, y = fuso)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(title = "Fuso vs Deepest with Smoothing", x = "Deepest", y = "Fuso")
+```
+
+```{r}
+library(vegan)
+# new data frame
+bacteria_data <- data[, c("lepto", "strep", "fuso", "prev")]
+
+# calculate alpha diversity (Shannon) for the dataset
+shannon_diversity <- diversity(bacteria_data, index = "shannon")
+print(shannon_diversity)
+
+# Rarefy the data and make a plot using rarecurve
+bacteria_data <- round(bacteria_data)
+
+total_abundance <- rowSums(bacteria_data)
+print(total_abundance)
+
+min_abundance <- min(total_abundance)
+print(min_abundance)
+
+rarefied_data <- rarefy(bacteria_data, min_abundance)
+print(rarefied_data)
+
+rarecurve(bacteria_data, col = "blue")
+
+# Calculate Bray-Curtis dissimilarity matrix, show the matrix and plot a histogram
+
+bc_dist <- vegdist(bacteria_data, method = "bray")
+print(bc_dist)
+
+# Histogram of Bray-Curtis dissimilarities
+hist(bc_dist, main = "Bray-Curtis Dissimilarity", xlab = "Dissimilarity")
+
+# Make a multidimensional scaling plot using the Bray-Curtis matrix
+bacteria_data.mds <- metaMDS(bacteria_data, distance = "bray", trace = FALSE, autotransform = FALSE)
+
+plot(bacteria_data.mds$points)
+MDS_xy <- data.frame(bacteria_data.mds$points)
+
+MDS_xy$Habit <- data$status
+MDS_xy$Time <- data$time
+
+library(ggplot2)
+
+ggplot(MDS_xy, aes(x = MDS1, y = MDS2, color = Habit)) +
+  geom_point() +
+  theme_bw() +
+  labs(title = "MDS Plot Colored by Habit", x = "MDS1", y = "MDS2")
+
+```
+
