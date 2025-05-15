@@ -1,0 +1,97 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+list.files('~')
+```
+```{r}
+d1=read.table('RTestData.txt', header=TRUE)
+d1
+```
+```{r}
+#fuso
+d1$fuso
+attach(d1)
+fuso
+```
+
+```{r}
+hist(d1$strep)#histogram
+qqnorm(d1$strep)#quantile-quantile (Q-Q) plot
+lstrep=log(d1$strep)#take the log of strep
+qqnorm(lstrep)
+hist(lstrep)
+```
+```{r}
+t.test(d1$strep, d1$fuso)
+t.test(lstrep, d1$fuso)
+# test statistic went from negative to positive, p-value went from very small to very very small, the p-value changed after taking the log of strep because it made it more normal, impacting the test statistic used to calculate the p-value, especially if the original data was highly skewed.
+```
+
+```{r}
+getwd()
+d2=read.csv('primer-1.csv')
+attach(d2)#makes columns directly accessible
+head(d2) #shows first 6 rows of the data frame
+colnames(d2)#V1 does not exist
+```
+
+```{r}
+newdata=d1[order(time),]
+time1=subset(d1, time=='1')
+#more complex data wrangling - https://r4ds.had.co.nz/transform.html
+```
+
+```{r}
+write.csv(time1, "time1.csv")
+getwd()
+write.csv(time1, "C:/Users/Barba/OneDrive/Desktop/time1.csv")
+```
+
+```{r}
+head(airquality)
+head(ToothGrowth)
+attach(airquality)#attach makes it easier to reference variables in dataset without needing to use $
+attach(ToothGrowth)
+qqnorm(Ozone)
+qqline(Ozone)#argument the graph with a diagonal line
+hist(Ozone, main="Ozone Histogram", xlab="Ozone")
+shapiro.test(Ozone)
+Ozone_log=log(Ozone+1)
+hist(Ozone_log)
+pairs(airquality[, c("Ozone", "Solar.R", "Wind", "Temp")], main="Airquality Scatter Plot Matrix") #one way to make the matrix scatter plot, found online. non-categorical variables are considered numerical data
+pairs(ToothGrowth[, c("len", "dose")], main="ToothGrowth Scatterplot Matrix")
+plot(airquality[,1:4], main="Airquality Scatter Plot Matrix") #RCookbook way of plotting
+
+#testing a correaltion for significance
+cor.test(airquality$Ozone, airquality$Solar.R)
+cor.test(airquality$Wind, airquality$Temp)
+
+#Adjust p-value using fdr and Bonferroni
+cor.test_OS <- cor.test(airquality$Ozone, airquality$Solar.R)
+cor.test_WT <- cor.test(airquality$Wind, airquality$Temp)
+p_value_OS <- cor.test_OS$p.value
+p_value_WT <- cor.test_WT$p.value
+p_adjustedOS_fdr <- p.adjust(p_value_OS, method = "fdr")
+p_adjustedWT_fdr <- p.adjust(p_value_WT, method = "fdr")
+
+p_adjustedOS_B <- p.adjust(p_value_OS, method = "bonferroni")
+p_adjustedWT_B <- p.adjust(p_value_WT, method = "bonferroni")
+
+print(p_adjustedOS_fdr)
+print(p_adjustedWT_fdr)
+
+print(p_adjustedOS_B)
+print(p_adjustedWT_B)
+
+# Specific tests
+aov(len ~ supp, data = ToothGrowth)
+lm(len ~ dose, data = ToothGrowth)
+
+aov(Temp ~ Month, data=airquality)
+cor(airquality$Ozone, airquality$Solar.R, use="complete.obs")
+cor(airquality$Wind, airquality$Temp, use="complete.obs")
+```
+
